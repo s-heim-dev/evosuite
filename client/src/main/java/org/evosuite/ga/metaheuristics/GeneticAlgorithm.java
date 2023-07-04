@@ -49,6 +49,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.lang.UnsupportedOperationException;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.stream.Stream;
@@ -146,7 +147,16 @@ public abstract class GeneticAlgorithm<T extends Chromosome<T>> implements Searc
     /**
      * Generate one new generation
      */
-    protected abstract void evolve();
+    protected void evolve() {
+        evolve(Properties.USE_3_PARENTS ? 3 : 2);
+    }
+
+    /**
+     * Generate one new generation
+     */
+    protected void evolve(int parentsNumber) {
+        throw new UnsupportedOperationException("Evolution with defined number of parents is not implemented yet for this algorithm!");
+    }
 
     /**
      * Local search is only applied every X generations

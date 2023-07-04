@@ -26,6 +26,8 @@ import org.evosuite.ga.ConstructionFailedException;
 import org.evosuite.ga.FitnessFunction;
 import org.evosuite.utils.Randomness;
 
+import java.util.*;
+
 
 /**
  * Alternative version of steady state GA
@@ -53,36 +55,34 @@ public class SteadyStateGA<T extends Chromosome<T>> extends MonotonicGA<T> {
      * Perform one iteration of the search
      */
     @Override
-    protected void evolve() {
+    protected void evolve(int parentsNumber) {
         logger.debug("Generating offspring");
         currentIteration++;
 
-        T parent1 = selectionFunction.select(population);
-        T parent2 = selectionFunction.select(population);
+        List<T> parents = new ArrayList<>();
+        List<T> offsprings = new ArrayList<>();
 
-        T offspring1 = parent1.clone();
-        T offspring2 = parent2.clone();
+        for (int i = 0; i < parentsNumber; i++) {
+            T parent = selectionFunction.select(population);
+            parents.add(parent);
+            offsprings.add(parent.clone());
+        }
 
         try {
             // Crossover
             if (Randomness.nextDouble() <= Properties.CROSSOVER_RATE) {
-                crossoverFunction.crossOver(offspring1, offspring2);
+                crossoverFunction.crossOver(offsprings);
             }
 
             // Mutation
-            notifyMutation(offspring1);
-            offspring1.mutate();
-            notifyMutation(offspring2);
-            offspring2.mutate();
+            for (T offspring : offsprings) {
+                notifyMutation(offspring);
+                offspring.mutate();
 
-            if (offspring1.isChanged()) {
-                offspring1.updateAge(currentIteration);
+                if (offspring.isChanged()) {
+                    offspring.updateAge(currentIteration);
+                }
             }
-            if (offspring2.isChanged()) {
-                offspring2.updateAge(currentIteration);
-            }
-
-
         } catch (ConstructionFailedException e) {
             logger.info("CrossOver/Mutation failed");
             return;
@@ -91,25 +91,22 @@ public class SteadyStateGA<T extends Chromosome<T>> extends MonotonicGA<T> {
         // The two offspring replace the parents if and only if one of
         // the offspring is not worse than the best parent.
         for (FitnessFunction<T> fitnessFunction : fitnessFunctions) {
-            fitnessFunction.getFitness(offspring1);
-            notifyEvaluation(offspring1);
-            fitnessFunction.getFitness(offspring2);
-            notifyEvaluation(offspring2);
+            for (T offspring : offsprings) {
+                fitnessFunction.getFitness(offspring);
+                notifyEvaluation(offspring);
+            }
         }
 
-
-        // if (replacement_function.keepOffspring(parent1, parent2, offspring1,
         if (!Properties.PARENT_CHECK
-                || keepOffspring(parent1, parent2, offspring1, offspring2)) {
+                || keepOffspring(parents, offsprings)) {
             logger.debug("Keeping offspring");
 
-            if (!isTooLong(offspring1)) {
-                population.remove(parent1);
-                population.add(offspring1);
-            }
-            if (!isTooLong(offspring2)) {
-                population.remove(parent2);
-                population.add(offspring2);
+            for (int i = 0; i < parentsNumber; i++) {
+                T offspring = offsprings.get(i);
+                if (!isTooLong(offspring)) {
+                    population.remove(parents.get(i));
+                    population.add(offspring);
+                }
             }
         } else {
             logger.debug("Keeping parents");

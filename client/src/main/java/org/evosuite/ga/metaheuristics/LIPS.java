@@ -129,7 +129,7 @@ public class LIPS extends GeneticAlgorithm<TestChromosome> {
     }
 
     @Override
-    protected void evolve() {
+    protected void evolve(int parentsNumber) {
         List<TestChromosome> newGeneration = new ArrayList<>();
 
         // Elitism. It is not specified in original paper [1].
@@ -137,35 +137,36 @@ public class LIPS extends GeneticAlgorithm<TestChromosome> {
         // elitism has been shown to positively affect the convergence
         // speed of GAs in various optimisation problems
         population.sort(new SortByFitness<>(this.currentTarget, false));
-        newGeneration.add(population.get(0).clone());
-        newGeneration.add(population.get(1).clone());
+
+        for (int i = 0; i < parentsNumber; i++) {
+            newGeneration.add(population.get(i).clone());
+        }
 
         // new_generation.size() < population_size
         while (newGeneration.size() < Properties.POPULATION) {
-            TestChromosome parent1 = selectionFunction.select(population);
-            TestChromosome parent2 = selectionFunction.select(population);
+            List<TestChromosome> parents = new ArrayList<>();
+            List<TestChromosome> offsprings = new ArrayList<>();
 
-            TestChromosome offspring1 = parent1.clone();
-            TestChromosome offspring2 = parent2.clone();
+            for (int i = 0; i < parentsNumber; i++) {
+                TestChromosome parent = selectionFunction.select(population);
+
+                parents.add(parent);
+                offsprings.add(parent.clone());
+            }
 
             try {
                 if (Randomness.nextDouble() <= Properties.CROSSOVER_RATE) {
-                    crossoverFunction.crossOver(offspring1, offspring2);
+                    crossoverFunction.crossOver(offsprings);
                 }
 
-                notifyMutation(offspring1);
-                offspring1.mutate();
-                newGeneration.add(offspring1);
+                for (TestChromosome offspring : offsprings) {
+                    notifyMutation(offspring);
+                    offspring.mutate();
+                    newGeneration.add(offspring);
 
-                notifyMutation(offspring2);
-                offspring2.mutate();
-                newGeneration.add(offspring2);
-
-                if (offspring1.isChanged()) {
-                    offspring1.updateAge(currentIteration);
-                }
-                if (offspring2.isChanged()) {
-                    offspring2.updateAge(currentIteration);
+                    if (offspring.isChanged()) {
+                        offspring.updateAge(currentIteration);
+                    }
                 }
             } catch (ConstructionFailedException e) {
                 logger.info("CrossOver/Mutation failed.");

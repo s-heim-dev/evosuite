@@ -105,6 +105,21 @@ public class CoverageCrossOver extends CrossOverFunction<TestSuiteChromosome> {
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * @param parent1 
+     * @param parent2
+     * @param parent3
+     */
+    @Override
+    public void crossOver(TestSuiteChromosome parent1, TestSuiteChromosome parent2, TestSuiteChromosome parent3)
+            throws ConstructionFailedException {
+
+        System.exit(-1);
+        
+    }
+
+    /**
      * Create a map from coverage goal to tests that cover this goal
      *
      * @param goalMap

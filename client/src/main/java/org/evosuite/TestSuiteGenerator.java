@@ -121,7 +121,9 @@ public class TestSuiteGenerator {
      * @return a {@link java.lang.String} object.
      */
     public TestGenerationResult generateTestSuite() {
+        int parentsNumber = Properties.USE_3_PARENTS ? 3 : 2;
 
+        LoggingUtils.getEvoLogger().info("* " + ClientProcess.getPrettyPrintIdentifier() + "Using " + parentsNumber + " Parents");
         LoggingUtils.getEvoLogger().info("* " + ClientProcess.getPrettyPrintIdentifier() + "Analyzing classpath: ");
 
         ClientServices.getInstance().getClientNode().changeState(ClientState.INITIALIZATION);

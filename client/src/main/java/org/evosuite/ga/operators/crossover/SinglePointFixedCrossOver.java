@@ -58,4 +58,18 @@ public class SinglePointFixedCrossOver<T extends Chromosome<T>> extends CrossOve
         parent2.crossOver(t1, point, point);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @param parent1 
+     * @param parent2
+     * @param parent3
+     */
+    @Override
+    public void crossOver(T parent1, T parent2, T parent3)
+            throws ConstructionFailedException {
+
+        System.exit(-1);
+        
+    }
 }

@@ -203,29 +203,48 @@ public class MAPElites extends GeneticAlgorithm<TestChromosome> {
     }
 
     @Override
-    protected void evolve() {
-        Set<TestChromosome> parents1 = this.getToMutate();
-        Set<TestChromosome> parents2 = this.getToMutate();
+    protected void evolve(int parentsNumber) {
 
+        List<Set<TestChromosome>> parentsList = new ArrayList<>();
+
+        for (int i = 0; i < parentsNumber; i++) {
+            parentsList.add(this.getToMutate());
+        }
+
+        Set<TestChromosome> parents1 = parentsList.get(0);
         Set<TestChromosome> toMutate = new LinkedHashSet<>();
 
         for (TestChromosome parent1 : parents1) {
-            TestChromosome offspring1 = parent1.clone();
+            if (Randomness.nextDouble() <= Properties.CROSSOVER_RATE) {
+                List<TestChromosome> parents = new ArrayList<>();
+                List<TestChromosome> offsprings = new ArrayList<>();
 
-            if (parents2.size() > 0 && Randomness.nextDouble() <= Properties.CROSSOVER_RATE) {
-                TestChromosome parent2 = Randomness.choice(parents2);
-                TestChromosome offspring2 = parent2.clone();
+                offsprings.add(parent1.clone());
+
+                for (int i = 1; i < parentsNumber; i++) {
+                    Set<TestChromosome> parentsSet = parentsList.get(i);
+                    if (parentsSet.size() > 0) {
+                        TestChromosome parent = Randomness.choice(parentsList.get(i));
+                        parents.add(parent);
+                        offsprings.add(parent.clone());
+                    } 
+                }
+
+                if (parents.size() < 2) {
+                    continue;
+                }
 
                 try {
-                    this.crossoverFunction.crossOver(offspring1, offspring2);
+                    this.crossoverFunction.crossOver(offsprings);
                 } catch (ConstructionFailedException e) {
                     logger.debug("CrossOver failed.");
                     continue;
                 }
 
-                applyMutation(offspring2, parent2);
+                for (int i = 0; i < parentsNumber; i++) {
+                    applyMutation(offsprings.get(i), parents.get(i));
+                }
             }
-            applyMutation(offspring1, parent1);
         }
 
         if ((toMutate.isEmpty() && Properties.MAP_ELITES_CHOICE != Properties.MapElitesChoice.SINGLE_AVG)

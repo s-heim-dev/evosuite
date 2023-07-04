@@ -53,7 +53,7 @@ public class StandardGA<T extends Chromosome<T>> extends GeneticAlgorithm<T> {
      * {@inheritDoc}
      */
     @Override
-    protected void evolve() {
+    protected void evolve(int parentsNumber) {
 
         // Elitism
         List<T> newGeneration = new ArrayList<>(elitism());
@@ -61,42 +61,41 @@ public class StandardGA<T extends Chromosome<T>> extends GeneticAlgorithm<T> {
         // new_generation.size() < population_size
         while (!isNextPopulationFull(newGeneration)) {
 
-            T parent1 = selectionFunction.select(population);
-            T parent2 = selectionFunction.select(population);
+            List<T> parents = new ArrayList<>();
+            List<T> offsprings = new ArrayList<>();
 
-            T offspring1 = parent1.clone();
-            T offspring2 = parent2.clone();
+            for (int i = 0; i < parentsNumber; i++) {
+                T parent = selectionFunction.select(population);
+                parents.add(parent);
+                offsprings.add(parent.clone());
+            }
 
             try {
                 if (Randomness.nextDouble() <= Properties.CROSSOVER_RATE) {
-                    crossoverFunction.crossOver(offspring1, offspring2);
+                    crossoverFunction.crossOver(offsprings);
                 }
 
-                notifyMutation(offspring1);
-                offspring1.mutate();
-                notifyMutation(offspring2);
-                offspring2.mutate();
+                for (T offspring : offsprings) {
+                    notifyMutation(offspring);
+                    offspring.mutate();
 
-                if (offspring1.isChanged()) {
-                    offspring1.updateAge(currentIteration);
-                }
-                if (offspring2.isChanged()) {
-                    offspring2.updateAge(currentIteration);
+                    if (offspring.isChanged()) {
+                        offspring.updateAge(currentIteration);
+                    }
                 }
             } catch (ConstructionFailedException e) {
                 logger.info("CrossOver/Mutation failed.");
                 continue;
             }
 
-            if (!isTooLong(offspring1))
-                newGeneration.add(offspring1);
-            else
-                newGeneration.add(parent1);
+            for (int i = 0; i < parentsNumber; i++) {
+                T offspring = offsprings.get(i);
 
-            if (!isTooLong(offspring2))
-                newGeneration.add(offspring2);
-            else
-                newGeneration.add(parent2);
+                if (!isTooLong(offspring))
+                    newGeneration.add(offspring);
+                else
+                    newGeneration.add(parents.get(i));
+            }
         }
 
         population = newGeneration;

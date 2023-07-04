@@ -19,6 +19,7 @@
  */
 package org.evosuite.ga;
 
+import java.util.List;
 import java.io.Serializable;
 
 /**
@@ -94,6 +95,27 @@ public abstract class ReplacementFunction<T extends Chromosome<T>> implements Se
     }
 
     /**
+     * <p>
+     * getBest
+     * </p>
+     *
+     * @param chromosomes a list of {@link org.evosuite.ga.Chromosome} objects.
+     * @return a {@link org.evosuite.ga.Chromosome} object.
+     */
+    protected T getBest(List<T> chromosomes) {
+        if (chromosomes.size() == 0)
+            return null;
+
+        T best = chromosomes.get(0);
+        for (T chromosome : chromosomes) {
+            if (isBetter(chromosome, best)) 
+                best = chromosome;
+        }
+
+        return best;
+    }
+
+    /**
      * Decide whether to keep the offspring or the parents
      *
      * @param parent1    a {@link org.evosuite.ga.Chromosome} object.
@@ -114,6 +136,22 @@ public abstract class ReplacementFunction<T extends Chromosome<T>> implements Se
     }
 
     /**
+     * Decide whether to keep the offspring or the parents
+     *
+     * @param parents    a list of {@link org.evosuite.ga.Chromosome} objects.
+     * @param offsprings a list of {@link org.evosuite.ga.Chromosome} objects.
+     * @param offspring2 a {@link org.evosuite.ga.Chromosome} object.
+     * @return a boolean.
+     */
+    public boolean keepOffspring(List<T> parents, List<T> offsprings) {
+        if (maximize) {
+            return compareBestOffspringToBestParent(parents, offsprings) >= 0;
+        } else {
+            return compareBestOffspringToBestParent(parents, offsprings) <= 0;
+        }
+    }
+
+    /**
      * Check how the best offspring compares with best parent
      *
      * @param parent1    a {@link org.evosuite.ga.Chromosome} object.
@@ -127,6 +165,21 @@ public abstract class ReplacementFunction<T extends Chromosome<T>> implements Se
 
         T bestOffspring = getBest(offspring1, offspring2);
         T bestParent = getBest(parent1, parent2);
+
+        return bestOffspring.compareTo(bestParent);
+    }
+
+    /**
+     * Check how the best offspring compares with best parent
+     *
+     * @param parents    a list of {@link org.evosuite.ga.Chromosome} objects.
+     * @param offsprings    a list of {@link org.evosuite.ga.Chromosome} objects.
+     * @return a int.
+     */
+    protected int compareBestOffspringToBestParent(List<T> parents, List<T> offsprings) {
+
+        T bestOffspring = getBest(offsprings);
+        T bestParent = getBest(parents);
 
         return bestOffspring.compareTo(bestParent);
     }

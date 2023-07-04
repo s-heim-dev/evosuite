@@ -51,6 +51,19 @@ public class SBXCrossover extends CrossOverFunction<NSGAChromosome> {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @param parent1 
+     * @param parent2
+     * @param parent3
+     */
+    @Override
+    public void crossOver(NSGAChromosome parent1, NSGAChromosome parent2, NSGAChromosome parent3)
+            throws ConstructionFailedException {
+        throw new ConstructionFailedException("Not implemented yet!");   
+    }
+
     private void doCrossover(DoubleVariable v1, DoubleVariable v2) {
         double distributionIndex = 20.0;
 

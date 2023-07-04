@@ -66,7 +66,7 @@ public class StandardChemicalReaction<T extends Chromosome<T>> extends GeneticAl
      * {@inheritDoc}
      */
     @Override
-    protected void evolve() {
+    protected void evolve(int parentsNumber) {
 
         if (Randomness.nextDouble() > Properties.MOLECULAR_COLLISION_RATE || this.population.size() == 1) {
             // uni-molecular collision
@@ -85,7 +85,7 @@ public class StandardChemicalReaction<T extends Chromosome<T>> extends GeneticAl
 
                 List<T> offsprings = this.decomposition(molecule);
                 if (offsprings != null) {
-                    // remove 'molecule' from population, and add 'offspring1' and 'offspring2' to population
+                    // remove 'molecule' from population, and add 'offspring's to population
                     this.population.remove(moleculeIndex);
                     this.population.addAll(offsprings);
                 }
@@ -112,15 +112,26 @@ public class StandardChemicalReaction<T extends Chromosome<T>> extends GeneticAl
             assert molecule2Index >= 0 && molecule2Index < this.population.size();
             assert molecule1Index != molecule2Index;
 
-            T molecule1 = this.population.get(molecule1Index);
-            T molecule2 = this.population.get(molecule2Index);
+            List<T> molecules = new ArrayList<>();
+
+            for (int i = 0; i < parentsNumber; i++) {
+                molecules.add(this.population.get(molecule1Index));
+            }
 
             // have they been involved an inter-molecular ineffective collision or a synthesis?
-            if (this.synthesisCheck(molecule1) && this.synthesisCheck(molecule2)) {
+            boolean isSynthesed = true;
+            for (T molecule : molecules) {
+                if (!this.synthesisCheck(molecule)) {
+                    isSynthesed = false;
+                    break;
+                }
+            }
+
+            if (isSynthesed) {
                 // synthesis
                 logger.debug("a synthesis has occurred");
 
-                T offspring = this.synthesis(molecule1, molecule2);
+                T offspring = this.synthesis(molecules);
                 if (offspring != null) {
                     // remove 'molecule1' and 'molecule2' from population, and add 'offspring'
                     this.population.set(molecule1Index, offspring);
@@ -130,7 +141,7 @@ public class StandardChemicalReaction<T extends Chromosome<T>> extends GeneticAl
                 // inter-molecular ineffective collision
                 logger.debug("an inter-molecular ineffective collision has occurred");
 
-                Pair<T, T> newMolecules = this.intermolecularIneffectiveCollision(molecule1, molecule2);
+                Pair<T, T> newMolecules = this.intermolecularIneffectiveCollision(molecules.get(0), molecules.get(1));
                 if (newMolecules != null) {
                     this.population.set(molecule1Index, newMolecules.getLeft());
                     this.population.set(molecule2Index, newMolecules.getRight());
@@ -497,35 +508,42 @@ public class StandardChemicalReaction<T extends Chromosome<T>> extends GeneticAl
      * Synthesis does the opposite of decomposition. A synthesis happens when multiple (assume two)
      * molecules hit against each other and fuse together.
      *
-     * @param molecule1 a {@link org.evosuite.ga.Chromosome} object
-     * @param molecule2 a {@link org.evosuite.ga.Chromosome} object
+     * @param molecules a list of {@link org.evosuite.ga.Chromosome} objects
      * @return a {@link org.evosuite.ga.Chromosome} object if a new solution is found, null otherwise
      */
-    private T synthesis(T molecule1, T molecule2) {
+    private T synthesis(List<T> molecules) {
 
         // The idea behind synthesis is diversification of solutions, similar to what crossover does in
         // evolutionary algorithms.
+        List<Double> potencialEnergies = new ArrayList<>();
+        List<Double> kineticEnergies = new ArrayList<>();
+        List<T> offsprings = new ArrayList<>();
 
-        double potencialEnergy1 = molecule1.getFitness();
-        double kineticEnergy1 = molecule1.getKineticEnergy();
-
-        double potencialEnergy2 = molecule2.getFitness();
-        double kineticEnergy2 = molecule2.getKineticEnergy();
-
-        T offspring1 = molecule1.clone();
-        T offspring2 = molecule2.clone();
+        for (T molecule : molecules) {
+            potencialEnergies.add(molecule.getFitness());
+            kineticEnergies.add(molecule.getKineticEnergy());
+            offsprings.add(molecule.clone());
+        }
 
         // crossover offspring
 
         try {
-            this.crossoverFunction.crossOver(offspring1, offspring2);
+            this.crossoverFunction.crossOver(offsprings);
         } catch (ConstructionFailedException e) {
             logger.debug("CrossOver failed");
             logger.debug(e.toString());
             return null;
         }
 
-        if (!offspring1.isChanged() && !offspring2.isChanged()) {
+        boolean isChanged = false;
+        for (T offspring : offsprings) {
+            if (offspring.isChanged()) {
+                isChanged = true;
+                break;
+            }
+        }
+
+        if (isChanged) {
             logger.debug("Crossover failed to change both individuals");
             return null;
         }
@@ -533,33 +551,46 @@ public class StandardChemicalReaction<T extends Chromosome<T>> extends GeneticAl
         // evaluate and choose one of the offspring
 
         for (FitnessFunction<T> fitnessFunction : this.fitnessFunctions) {
-            fitnessFunction.getFitness(offspring1);
-            this.notifyEvaluation(offspring1);
-            fitnessFunction.getFitness(offspring2);
-            this.notifyEvaluation(offspring2);
+            for (T offspring : offsprings) {
+                fitnessFunction.getFitness(offspring);
+                this.notifyEvaluation(offspring);
+            }
+        }
+        
+        int parentsNumber = Properties.USE_3_PARENTS ? 3 : 2;
+
+        T offspring = offsprings.get(0);
+        
+        for (int i = 1; i < parentsNumber; i++) {
+            T next = offsprings.get(i);
+            if (offspring.getFitness() >= next.getFitness()) {
+                offspring = next;
+            }
         }
 
-        T offspring = offspring1.getFitness() < offspring2.getFitness() ? offspring1 : offspring2;
-
         double potencialEnergy = offspring.getFitness();
-        if (potencialEnergy1 + potencialEnergy2 + kineticEnergy1 + kineticEnergy2 >= potencialEnergy) {
-            offspring
-                    .setKineticEnergy((potencialEnergy1 + potencialEnergy2 + kineticEnergy1 + kineticEnergy2)
-                            - potencialEnergy);
+        double totalEnergy = 0.0;
+
+        for (double energy : potencialEnergies) {
+            totalEnergy += energy;
+        }
+        for (double energy : kineticEnergies) {
+            totalEnergy += energy;
+        }
+
+        if (totalEnergy >= potencialEnergy) {
+            offspring.setKineticEnergy(totalEnergy - potencialEnergy);
             // reset number of collisions
             offspring.resetNumCollisions();
 
-            logger.debug("(" + potencialEnergy1 + "," + kineticEnergy1 + ")" + " --- " + "("
-                    + potencialEnergy2 + "," + kineticEnergy2 + ")" + " vs " + "(" + potencialEnergy + ","
-                    + offspring.getKineticEnergy() + ")\n" + "Buffer: " + this.buffer);
-
-            // destroy 'offspring1' and 'offspring2', i.e., 'molecule1' and 'molecule2' must be replaced
+            // destroy 'offspring's, i.e., 'molecule1's must be replaced
             // by the newly generated molecule ('offspring')
             return offspring;
         } else {
-            molecule1.increaseNumCollisionsByOne();
-            molecule2.increaseNumCollisionsByOne();
-
+            for (T molecule : molecules) {
+                molecule.increaseNumCollisionsByOne();
+            }
+            
             // destroy 'offspring'
             return null;
         }

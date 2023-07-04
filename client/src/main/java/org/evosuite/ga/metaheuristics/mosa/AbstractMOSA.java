@@ -137,6 +137,8 @@ public abstract class AbstractMOSA extends GeneticAlgorithm<TestChromosome> {
      * @return offspring population
      */
     protected List<TestChromosome> breedNextGeneration() {
+        int parentsNumber = Properties.USE_3_PARENTS ? 3 : 2;
+
         List<TestChromosome> offspringPopulation = new ArrayList<>(Properties.POPULATION);
         // we apply only Properties.POPULATION/2 iterations since in each generation
         // we generate two offsprings
@@ -148,40 +150,41 @@ public abstract class AbstractMOSA extends GeneticAlgorithm<TestChromosome> {
              * Because crossing over an individual with itself will most certainly give you the
              * same individual again...
              */
+            List<TestChromosome> parents = new ArrayList<>();
+            List<TestChromosome> offsprings = new ArrayList<>();
 
-            TestChromosome parent1 = this.selectionFunction.select(this.population);
-            TestChromosome parent2 = this.selectionFunction.select(this.population);
-            TestChromosome offspring1 = parent1.clone();
-            TestChromosome offspring2 = parent2.clone();
+            for (int j = 0; j < parentsNumber; j++) {
+                TestChromosome parent = this.selectionFunction.select(this.population);
+                parents.add(parent);
+                offsprings.add(parent.clone());
+            }
+
             // apply crossover
             if (Randomness.nextDouble() <= Properties.CROSSOVER_RATE) {
                 try {
-                    this.crossoverFunction.crossOver(offspring1, offspring2);
+                    this.crossoverFunction.crossOver(offsprings);
                 } catch (ConstructionFailedException e) {
                     logger.debug("CrossOver failed.");
                     continue;
                 }
             }
 
-            this.removeUnusedVariables(offspring1);
-            this.removeUnusedVariables(offspring2);
-
-            // apply mutation on offspring1
-            this.mutate(offspring1, parent1);
-            if (offspring1.isChanged()) {
-                this.clearCachedResults(offspring1);
-                offspring1.updateAge(this.currentIteration);
-                this.calculateFitness(offspring1);
-                offspringPopulation.add(offspring1);
+            for (TestChromosome offspring : offsprings) {
+                this.removeUnusedVariables(offspring);
             }
 
-            // apply mutation on offspring2
-            this.mutate(offspring2, parent2);
-            if (offspring2.isChanged()) {
-                this.clearCachedResults(offspring2);
-                offspring2.updateAge(this.currentIteration);
-                this.calculateFitness(offspring2);
-                offspringPopulation.add(offspring2);
+            for (int j = 0; j < parentsNumber; j++) {
+                TestChromosome parent = parents.get(j);
+                TestChromosome offspring = offsprings.get(j);
+
+                // apply mutation
+                this.mutate(offspring, parent);
+                if (offspring.isChanged()) {
+                    this.clearCachedResults(offspring);
+                    offspring.updateAge(this.currentIteration);
+                    this.calculateFitness(offspring);
+                    offspringPopulation.add(offspring);
+                }
             }
         }
         // Add new randomly generate tests

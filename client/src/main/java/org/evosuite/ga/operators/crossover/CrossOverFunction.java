@@ -24,6 +24,7 @@ import org.evosuite.ga.ConstructionFailedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.io.Serializable;
 
 /**
@@ -49,5 +50,30 @@ public abstract class CrossOverFunction<T extends Chromosome<T>> implements Seri
      */
     public abstract void crossOver(T parent1, T parent2)
             throws ConstructionFailedException;
+
+    /**
+     * Replace parents with crossed over individuals
+     *
+     * @param parent1 a {@link Chromosome} object.
+     * @param parent2 a {@link Chromosome} object.
+     * @param parent3 a {@link Chromosome} object.
+     * @throws org.evosuite.ga.ConstructionFailedException if any.
+     */
+    public abstract void crossOver(T parent1, T parent2, T parent3)
+            throws ConstructionFailedException;
+
+    /**
+     * Replace parents with crossed over individuals
+     * @throws org.evosuite.ga.ConstructionFailedException if any.
+     */
+    public void crossOver(List<T> parents)
+            throws ConstructionFailedException {
+        if (parents.size() == 2)
+            crossOver(parents.get(0), parents.get(1));
+        else if (parents.size() == 3) 
+            crossOver(parents.get(0), parents.get(1), parents.get(2));
+        else 
+            throw new ConstructionFailedException("Either two or three parents expected!");
+    }
 
 }

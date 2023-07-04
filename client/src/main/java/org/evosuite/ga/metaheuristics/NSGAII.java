@@ -75,46 +75,48 @@ public class NSGAII<T extends Chromosome<T>> extends GeneticAlgorithm<T> {
      * {@inheritDoc}
      */
     @Override
-    protected void evolve() {
+    protected void evolve(int parentsNumber) {
         // Create the offSpring population
         List<T> offspringPopulation = new ArrayList<>(population.size());
 
         // execute binary tournment selection, crossover, and mutation to
         // create a offspring population Qt of size N
         for (int i = 0; i < (population.size() / 2); i++) {
-            // Selection
-            T parent1 = selectionFunction.select(population);
-            T parent2 = selectionFunction.select(population);
+            List<T> parents = new ArrayList<>();
+            List<T> offsprings = new ArrayList<>();
 
-            // Crossover
-            T offspring1 = parent1.clone();
-            T offspring2 = parent2.clone();
+            for (int j = 0; j < parentsNumber; j++) {
+                T parent = selectionFunction.select(population);
+                parents.add(parent);
+                offsprings.add(parent.clone());
+            }
 
             try {
                 if (Randomness.nextDouble() <= Properties.CROSSOVER_RATE)
-                    crossoverFunction.crossOver(offspring1, offspring2);
+                    crossoverFunction.crossOver(offsprings);
             } catch (Exception e) {
                 logger.info("CrossOver failed");
             }
 
             // Mutation
             if (Randomness.nextDouble() <= Properties.MUTATION_RATE) {
-                notifyMutation(offspring1);
-                offspring1.mutate();
-                notifyMutation(offspring2);
-                offspring2.mutate();
+                for (T offspring : offsprings) {
+                    notifyMutation(offspring);
+                    offspring.mutate();
+                }
             }
 
             // Evaluate
             for (final FitnessFunction<T> ff : this.getFitnessFunctions()) {
-                ff.getFitness(offspring1);
-                notifyEvaluation(offspring1);
-                ff.getFitness(offspring2);
-                notifyEvaluation(offspring2);
+                for (T offspring : offsprings) {
+                    ff.getFitness(offspring);
+                    notifyEvaluation(offspring);
+                }
             }
 
-            offspringPopulation.add(offspring1);
-            offspringPopulation.add(offspring2);
+            for (T offspring : offsprings) {
+                offspringPopulation.add(offspring);
+            }
         }
 
         // Create the population union of Population and offSpring

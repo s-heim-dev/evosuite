@@ -93,7 +93,7 @@ public class CellularGA<T extends Chromosome<T>> extends GeneticAlgorithm<T> {
     /**
      * Evolution process on individuals in the grid
      */
-    public void evolve() {
+    public void evolve(int parentsNumber) {
         // elitism has been shown to positively affect the convergence speed of GAs in various optimisation problems
         temp_cells = this.elitism();
 
@@ -108,19 +108,17 @@ public class CellularGA<T extends Chromosome<T>> extends GeneticAlgorithm<T> {
             }
 
 
-            List<T> parents = selectionFunction.select(neighbors, 2);
+            List<T> parents = selectionFunction.select(neighbors, parentsNumber);
+            List<T> offsprings = new ArrayList<>();
 
-            T parent1 = parents.get(0);
-            T parent2 = parents.get(1);
-
-            T offspring1 = parent1.clone();
-            T offspring2 = parent2.clone();
-
+            for (T parent : parents) {
+                offsprings.add(parent.clone());
+            }
 
             try {
                 // Crossover
                 if (Randomness.nextDouble() <= Properties.CROSSOVER_RATE) {
-                    crossoverFunction.crossOver(offspring1, offspring2);
+                    crossoverFunction.crossOver(offsprings);
                 }
 
             } catch (ConstructionFailedException e) {
@@ -128,7 +126,7 @@ public class CellularGA<T extends Chromosome<T>> extends GeneticAlgorithm<T> {
                 continue;
             }
 
-            T bestOffspring = getBestOffspring(offspring1, offspring2);
+            T bestOffspring = getBestOffspring(offsprings);
 
             notifyMutation(bestOffspring);
             bestOffspring.mutate();
@@ -173,26 +171,28 @@ public class CellularGA<T extends Chromosome<T>> extends GeneticAlgorithm<T> {
         }
     }
 
-    /**
+     /**
      * Get the best offspring
      *
-     * @param offspring1
-     * @param offspring2
+     * @param offsprings
      * @return better offspring
      */
-    public T getBestOffspring(T offspring1, T offspring2) {
+    public T getBestOffspring(List<T> offsprings) {
 
         for (FitnessFunction<T> fitnessFunction : fitnessFunctions) {
-            fitnessFunction.getFitness(offspring1);
-            notifyEvaluation(offspring1);
-            fitnessFunction.getFitness(offspring2);
-            notifyEvaluation(offspring2);
+            for (T offspring : offsprings) {
+                fitnessFunction.getFitness(offspring);
+                notifyEvaluation(offspring);
+            }
         }
 
-        if (isBetterOrEqual(offspring1, offspring2))
-            return offspring1;
-        else
-            return offspring2;
+        T best = offsprings.get(0);
+        for (T offspring : offsprings) {
+            if (isBetterOrEqual(offspring, best)) 
+                best = offspring;
+        }
+
+        return best;
     }
 
 

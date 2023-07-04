@@ -56,7 +56,7 @@ public class BreederGA<T extends Chromosome<T>> extends StandardGA<T> {
     }
 
     @Override
-    protected void evolve() {
+    protected void evolve(int parentsNumber) {
 
         // Elitism
         List<T> newGeneration = new ArrayList<>(elitism());
@@ -65,7 +65,7 @@ public class BreederGA<T extends Chromosome<T>> extends StandardGA<T> {
         List<T> candidates = population.subList(0, (int) (population.size() * Properties.TRUNCATION_RATE));
 
         // If there are no candidates, the parameters are not set optimally,
-        if (candidates.size() <= 1) {
+        if (candidates.size() < parentsNumber) {
             candidates.addAll(population);
             AtMostOnceLogger.warn(logger, "Not sufficient candidates for reproduction, consider increasing the population size, or the truncation rate");
         }
@@ -73,26 +73,27 @@ public class BreederGA<T extends Chromosome<T>> extends StandardGA<T> {
         // new_generation.size() < population_size
         while (!isNextPopulationFull(newGeneration)) {
 
-            T parent1 = Randomness.choice(candidates);
-            T parent2 = Randomness.choice(candidates);
-
-            // Self-breeding is nor allowed
-            if (parent1 == parent2) {
-                continue;
+            List<T> parents = new ArrayList<>();
+            List<T> offsprings = new ArrayList<>();
+            for (int i = 0; i < parentsNumber; i++) {
+                T parent;
+                do {
+                    parent = Randomness.choice(candidates);
+                }
+                while (parents.contains(parent));
+                parents.add(parent);
+                offsprings.add(parent.clone());
             }
 
-            T offspring1 = parent1.clone();
-            T offspring2 = parent2.clone();
-
             try {
-                crossoverFunction.crossOver(offspring1, offspring2);
+                crossoverFunction.crossOver(offsprings);
             } catch (ConstructionFailedException e) {
                 logger.info("CrossOver/Mutation failed.");
                 continue;
             }
 
 
-            T offspring = Randomness.choice(offspring1, offspring2);
+            T offspring = Randomness.choice(offsprings);
 
             notifyMutation(offspring);
             offspring.mutate();
@@ -101,7 +102,7 @@ public class BreederGA<T extends Chromosome<T>> extends StandardGA<T> {
                 offspring.updateAge(currentIteration);
             }
             if (!isTooLong(offspring)) {
-                newGeneration.add(offspring1);
+                newGeneration.add(offsprings.get(0));
             }
         }
 

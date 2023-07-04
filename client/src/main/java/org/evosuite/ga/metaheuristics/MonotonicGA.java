@@ -58,15 +58,12 @@ public class MonotonicGA<T extends Chromosome<T>> extends GeneticAlgorithm<T> {
      * keepOffspring
      * </p>
      *
-     * @param parent1    a {@link org.evosuite.ga.Chromosome} object.
-     * @param parent2    a {@link org.evosuite.ga.Chromosome} object.
-     * @param offspring1 a {@link org.evosuite.ga.Chromosome} object.
-     * @param offspring2 a {@link org.evosuite.ga.Chromosome} object.
+     * @param parents    a list of {@link org.evosuite.ga.Chromosome} objects.
+     * @param offsprings    a list of {@link org.evosuite.ga.Chromosome} objects.
      * @return a boolean.
      */
-    protected boolean keepOffspring(T parent1, T parent2, T offspring1,
-                                    T offspring2) {
-        return replacementFunction.keepOffspring(parent1, parent2, offspring1, offspring2);
+    protected boolean keepOffspring(List<T> parents, List<T> offsprings) {
+        return replacementFunction.keepOffspring(parents, offsprings);
     }
 
     /**
@@ -74,7 +71,7 @@ public class MonotonicGA<T extends Chromosome<T>> extends GeneticAlgorithm<T> {
      */
     @SuppressWarnings("unchecked")
     @Override
-    protected void evolve() {
+    protected void evolve(int parentsNumber) {
 
         // Elitism
         logger.debug("Elitism");
@@ -86,23 +83,28 @@ public class MonotonicGA<T extends Chromosome<T>> extends GeneticAlgorithm<T> {
         while (!isNextPopulationFull(newGeneration) && !isFinished()) {
             logger.debug("Generating offspring");
 
-            T parent1 = selectionFunction.select(population);
-            T parent2;
-            if (Properties.HEADLESS_CHICKEN_TEST)
-                parent2 = newRandomIndividual(); // crossover with new random
-                // individual
-            else
-                parent2 = selectionFunction.select(population); // crossover
-            // with existing
-            // individual
+            List<T> parents = new ArrayList<>();
+            List<T> offsprings = new ArrayList<>();
 
-            T offspring1 = parent1.clone();
-            T offspring2 = parent2.clone();
+            T parent1 = selectionFunction.select(population);
+            parents.add(parent1);
+            offsprings.add(parent1.clone());
+
+            for (int i = 1; i < parentsNumber; i++) {
+                T parent2;
+                if (Properties.HEADLESS_CHICKEN_TEST)
+                    parent2 = newRandomIndividual(); // crossover with new random individual
+                else
+                    parent2 = selectionFunction.select(population); // crossover with existing individual
+                
+                parents.add(parent2);
+                offsprings.add(parent2.clone());
+            }
 
             try {
                 // Crossover
                 if (Randomness.nextDouble() <= Properties.CROSSOVER_RATE) {
-                    crossoverFunction.crossOver(offspring1, offspring2);
+                    crossoverFunction.crossOver(offsprings);
                 }
 
             } catch (ConstructionFailedException e) {
@@ -110,61 +112,51 @@ public class MonotonicGA<T extends Chromosome<T>> extends GeneticAlgorithm<T> {
                 continue;
             }
 
-            // Mutation
-            notifyMutation(offspring1);
-            offspring1.mutate();
-            notifyMutation(offspring2);
-            offspring2.mutate();
+            for (T offspring : offsprings) {
+                // Mutation
+                notifyMutation(offspring);
+                offspring.mutate();
 
-            if (offspring1.isChanged()) {
-                offspring1.updateAge(currentIteration);
-            }
-            if (offspring2.isChanged()) {
-                offspring2.updateAge(currentIteration);
-            }
+                if (offspring.isChanged()) {
+                    offspring.updateAge(currentIteration);
+                }
 
-            // The two offspring replace the parents if and only if one of
-            // the offspring is not worse than the best parent.
-            for (FitnessFunction<T> fitnessFunction : fitnessFunctions) {
-                fitnessFunction.getFitness(offspring1);
-                notifyEvaluation(offspring1);
-                fitnessFunction.getFitness(offspring2);
-                notifyEvaluation(offspring2);
+                // The offspring replace the parents if and only if one of
+                // the offspring is not worse than the best parent.
+                for (FitnessFunction<T> fitnessFunction : fitnessFunctions) {
+                    fitnessFunction.getFitness(offspring);
+                    notifyEvaluation(offspring);
+                }
             }
 
-            if (keepOffspring(parent1, parent2, offspring1, offspring2)) {
+            if (keepOffspring(parents, offsprings)) {
                 logger.debug("Keeping offspring");
 
                 // Reject offspring straight away if it's too long
                 int rejected = 0;
-                if (isTooLong(offspring1) || offspring1.size() == 0) {
-                    rejected++;
-                } else {
-                    // if(Properties.ADAPTIVE_LOCAL_SEARCH ==
-                    // AdaptiveLocalSearchTarget.ALL)
-                    // applyAdaptiveLocalSearch(offspring1);
-                    newGeneration.add(offspring1);
+
+                for (T offspring : offsprings) {
+                    if (isTooLong(offspring) || offspring.size() == 0) {
+                        rejected++;
+                    } else {
+                        // if(Properties.ADAPTIVE_LOCAL_SEARCH ==
+                        // AdaptiveLocalSearchTarget.ALL)
+                        // applyAdaptiveLocalSearch(offspring);
+                        newGeneration.add(offspring);
+                    }
                 }
 
-                if (isTooLong(offspring2) || offspring2.size() == 0) {
-                    rejected++;
-                } else {
-                    // if(Properties.ADAPTIVE_LOCAL_SEARCH ==
-                    // AdaptiveLocalSearchTarget.ALL)
-                    // applyAdaptiveLocalSearch(offspring2);
-                    newGeneration.add(offspring2);
-                }
-
-                if (rejected == 1)
-                    newGeneration.add(Randomness.choice(parent1, parent2));
-                else if (rejected == 2) {
-                    newGeneration.add(parent1);
-                    newGeneration.add(parent2);
+                for (int i = 0; i < rejected; i++) {
+                    T parent = Randomness.choice(parents);
+                    parents.remove(parent);
+                    newGeneration.add(parent);
                 }
             } else {
                 logger.debug("Keeping parents");
-                newGeneration.add(parent1);
-                newGeneration.add(parent2);
+
+                for (T parent : parents) {
+                    newGeneration.add(parent);
+                }
             }
 
         }

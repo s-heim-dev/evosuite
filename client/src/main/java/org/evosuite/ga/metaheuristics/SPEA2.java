@@ -63,7 +63,7 @@ public class SPEA2<T extends Chromosome<T>> extends GeneticAlgorithm<T> {
     }
 
     @Override
-    protected void evolve() {
+    protected void evolve(int parentsNumber) {
         /*
          * Reproduction
          */
@@ -73,15 +73,18 @@ public class SPEA2<T extends Chromosome<T>> extends GeneticAlgorithm<T> {
             // TODO SelectionFunction has to be a BinaryTournamentSelection, i.e.,
             // a TournamenteSelection with 2 tournaments
             // TODO we might want to use BinaryTournamentSelectionCrowdedComparison
-            T parent1 = this.selectionFunction.select(this.archive);
-            T parent2 = this.selectionFunction.select(this.archive);
+            List<T> parents = new ArrayList<>();
+            List<T> offsprings = new ArrayList<>();
 
-            T offspring1 = parent1.clone();
-            T offspring2 = parent2.clone();
+            for (int i = 0; i < parentsNumber; i++) {
+                T parent = this.selectionFunction.select(this.archive);
+                parents.add(parent);
+                offsprings.add(parent.clone());
+            }
 
             if (Randomness.nextDouble() <= Properties.CROSSOVER_RATE) {
                 try {
-                    this.crossoverFunction.crossOver(offspring1, offspring2);
+                    this.crossoverFunction.crossOver(offsprings);
                 } catch (ConstructionFailedException e) {
                     logger.error("Crossover failed: " + e.getMessage());
                     e.printStackTrace();
@@ -89,14 +92,15 @@ public class SPEA2<T extends Chromosome<T>> extends GeneticAlgorithm<T> {
             }
 
             if (Randomness.nextDouble() <= Properties.MUTATION_RATE) {
-                this.notifyMutation(offspring1);
-                offspring1.mutate();
-                this.notifyMutation(offspring2);
-                offspring2.mutate();
+                for (T offspring : offsprings) {
+                    notifyMutation(offspring);
+                    offspring.mutate();
+                }
             }
 
-            offspringPopulation.add(offspring1);
-            offspringPopulation.add(offspring2);
+            for (T offspring : offsprings) {
+                offspringPopulation.add(offspring);
+            }
         }
 
         /*
