@@ -59,8 +59,11 @@ public abstract class CrossOverFunction<T extends Chromosome<T>> implements Seri
      * @param parent3 a {@link Chromosome} object.
      * @throws org.evosuite.ga.ConstructionFailedException if any.
      */
-    public abstract void crossOver(T parent1, T parent2, T parent3)
-            throws ConstructionFailedException;
+    public void crossOver(T parent1, T parent2, T parent3)
+            throws ConstructionFailedException {
+        logger.error(this.getClass().getSimpleName() + " does not implement usage of three parents!");
+        System.exit(-1);
+    }
 
     /**
      * Replace parents with crossed over individuals
