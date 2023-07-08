@@ -186,6 +186,34 @@ public abstract class AbstractTestSuiteChromosome<T extends AbstractTestSuiteChr
 
     /**
      * {@inheritDoc}
+     * <p>
+     * Keep up to position1, append copy of other1 from position2 onward, append copy of other2 from position3 on
+     */
+    @Override
+    public void crossOver(T other1, T other2, int position1, int position2, int position3)
+            throws ConstructionFailedException {
+
+        while (tests.size() > position1) {
+            tests.remove(position1);
+        }
+
+        for (int num = position1; num < position2; num++) {
+            E other1Test = other1.self().tests.get(num);
+            E cloned0Test = other1Test.clone().self();
+            tests.add(cloned0Test);
+        }
+
+        for (int num = position3; num < other2.size(); num++) {
+            E other2Test = other2.self().tests.get(num);
+            E cloned1Test = other2Test.clone().self();
+            tests.add(cloned1Test);
+        }
+
+        this.setChanged(true);
+    }
+
+    /**
+     * {@inheritDoc}
      */
     @Override
     public boolean equals(Object obj) {
