@@ -57,4 +57,43 @@ public class SinglePointCrossOver<T extends Chromosome<T>> extends CrossOverFunc
         parent1.crossOver(t2, point1, point2);
         parent2.crossOver(t1, point2, point1);
     }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * We split each parent in 3 thirds.
+     * 
+     * 
+     * @param parent1
+     * @param parent2
+     * @param parent3
+     */
+    @Override
+    public void crossOver(T parent1, T parent2, T parent3)
+            throws ConstructionFailedException {
+
+        if (parent1.size() < 3 || parent2.size() < 3 || parent3.size() < 3) {
+            return;
+        }
+
+        T t1 = parent1.clone();
+        T t2 = parent2.clone();
+        T t3 = parent3.clone();
+       
+
+        int oneThird1 = (int) Math.round(parent1.size() / 3.0);
+        int twoThird1 = (int) Math.round((parent1.size() / 3.0)*2);
+
+        int oneThird2 = (int) Math.round(parent2.size() / 3.0);
+        int twoThird2 = (int) Math.round((parent2.size() / 3.0)*2);
+
+        int oneThird3 = (int) Math.round(parent3.size() / 3.0);
+        int twoThird3 = (int) Math.round((parent3.size() / 3.0)*2);
+
+
+        parent1.crossOver(t2, t3, oneThird1, oneThird2, twoThird2, twoThird3);
+        parent2.crossOver(t3, t1, oneThird2, oneThird3, twoThird3, twoThird1);
+        parent3.crossOver(t1, t2, oneThird3, oneThird1, twoThird1, twoThird2);
+
+    }
 }

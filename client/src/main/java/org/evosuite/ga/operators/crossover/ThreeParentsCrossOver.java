@@ -52,8 +52,7 @@ public abstract class ThreeParentsCrossOver<T extends Chromosome<T>> extends Cro
         T t1 = parent1.clone();
         T t2 = parent2.clone();
         T t3 = parent3.clone();
-        // Choose a position in the middle
-        //float splitPoint = Randomness.nextFloat();
+       
 
         int oneThird1 = (int) Math.round(parent1.size() / 3.0);
         int twoThird1 = (int) Math.round((parent1.size() / 3.0)*2);
