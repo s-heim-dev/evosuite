@@ -332,12 +332,13 @@ public abstract class Chromosome<T extends Chromosome<T>>
      * @param other1    a {@link org.evosuite.ga.Chromosome} object.
      * @param other2    a {@link org.evosuite.ga.Chromosome} object.
      * @param position1 a int.
-     * @param position2 a int.
+     * @param position2_1 a int.
+     * @param position2_2 a int.
      * @param position3 a int.
      * @throws org.evosuite.ga.ConstructionFailedException if any.
      */
-    public void crossOver(T other1, T other2, int position1, int position2, int position3) throws ConstructionFailedException {
-        crossOver(other1, other2, position1, position2, position3);
+    public void crossOver(T other1, T other2, int position1, int position2_1, int position2_2, int position3) throws ConstructionFailedException {
+        crossOver(other1, other2, position1, position2_1, position2_2, position3);
     }
 
 

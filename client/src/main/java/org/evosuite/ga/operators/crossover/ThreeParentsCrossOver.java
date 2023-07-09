@@ -28,7 +28,7 @@ import org.evosuite.utils.Randomness;
  *
  * @author Jonathan Berger
  */
-public class SinglePointRelativeCrossOver<T extends Chromosome<T>> extends CrossOverFunction<T> {
+public abstract class ThreeParentsCrossOver<T extends Chromosome<T>> extends CrossOverFunction<T> {
 
     /**
      * {@inheritDoc}
@@ -41,7 +41,6 @@ public class SinglePointRelativeCrossOver<T extends Chromosome<T>> extends Cross
      * @param parent2
      * @param parent3
      */
-    @Override
     @Override
     public void crossOver(T parent1, T parent2, T parent3)
             throws ConstructionFailedException {
@@ -66,9 +65,9 @@ public class SinglePointRelativeCrossOver<T extends Chromosome<T>> extends Cross
         int twoThird3 = (int) Math.round((parent3.size() / 3.0)*2);
 
 
-        parent1.crossOver(t2, t3, oneThird1, twoThird2, twoThird3);
-        parent2.crossOver(t1, t3, oneThird2, twoThird1, twoThird3);
-        parent3.crossOver(t2, t1, oneThird3, twoThird2, twoThird1);
+        parent1.crossOver(t2, t3, oneThird1, oneThird2, twoThird2, twoThird3);
+        parent2.crossOver(t3, t1, oneThird2, oneThird3, twoThird3, twoThird1);
+        parent3.crossOver(t1, t2, oneThird3, oneThird1, twoThird1, twoThird2);
 
     }
 }
