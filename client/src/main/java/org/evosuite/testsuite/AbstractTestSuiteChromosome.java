@@ -190,7 +190,7 @@ public abstract class AbstractTestSuiteChromosome<T extends AbstractTestSuiteChr
      * Keep up to position1, append copy of other1 from position2_1 onward to position2_2, append copy of other2 from position3 on
      */
     @Override
-    public void crossOver(T other1, T other2, int position1,int position2_1, int position2_2, int position3)
+    public void crossOver(T other1, T other2, int position1, int position2_1, int position2_2, int position3)
             throws ConstructionFailedException {
 
         while (tests.size() > position1) {

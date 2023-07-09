@@ -54,7 +54,7 @@ public class SinglePointFixedCrossOver<T extends Chromosome<T>> extends CrossOve
         T t1 = parent1.clone();
         T t2 = parent2.clone();
 
-        parent1.crossOver(t2, point, point);
-        parent2.crossOver(t1, point, point);
+        parent1.crossOver(t2, point);
+        parent2.crossOver(t1, point);
     }
 }

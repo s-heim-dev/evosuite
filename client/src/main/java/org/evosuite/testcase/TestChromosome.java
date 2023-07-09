@@ -191,6 +191,40 @@ public final class TestChromosome extends AbstractTestChromosome<TestChromosome>
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Keep up to position1, append copy of other1 from position2_1 onward to position2_2, append copy of other2 from position3 on
+     */
+    @Override
+    public void crossOver(TestChromosome other1, TestChromosome other2, int position1, int position2_1, int position2_2, int position3)
+            throws ConstructionFailedException {
+                
+        logger.debug("Crossover starting");
+        TestChromosome offspring = new TestChromosome();
+        TestFactory testFactory = TestFactory.getInstance();
+
+        for (int i = 0; i < position1; i++) {
+            offspring.test.addStatement(test.getStatement(i).clone(offspring.test));
+        }
+
+        for (int i = position2_1; i < position2_2; i++) {
+            testFactory.appendStatement(offspring.test,
+                    other1.test.getStatement(i));
+        }
+
+        for (int i = position3; i < other2.size(); i++) {
+            testFactory.appendStatement(offspring.test,
+                    other2.test.getStatement(i));
+        }
+
+        if (!Properties.CHECK_MAX_LENGTH
+                || offspring.test.size() <= Properties.CHROMOSOME_LENGTH) {
+            test = offspring.test;
+            setChanged(true);
+        }
+    }
+
 
     /**
      * {@inheritDoc}

@@ -113,6 +113,25 @@ public class DummyChromosome extends Chromosome<DummyChromosome> {
     }
 
     @Override
+    public void crossOver(DummyChromosome other1, DummyChromosome other2, int position1, int position2_1, int position2_2, int position3)
+            throws ConstructionFailedException {
+                
+        while (values.size() > position1) {
+            values.remove(position1);
+        }
+
+        for (int num = position2_1; num < position2_2; num++) {
+            values.add(other1.get(num));
+        }
+
+        for (int num = position3; num < other2.size(); num++) {
+            values.add(other2.get(num));
+        }
+
+        this.setChanged(true);
+    }
+
+    @Override
     public boolean localSearch(LocalSearchObjective<DummyChromosome> objective) {
         return false;
     }

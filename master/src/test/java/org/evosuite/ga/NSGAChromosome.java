@@ -183,6 +183,12 @@ public class NSGAChromosome extends Chromosome<NSGAChromosome> {
     }
 
     @Override
+    public void crossOver(NSGAChromosome other1, NSGAChromosome other2, int position1, int position2_1, int position2_2, int position3)
+            throws ConstructionFailedException {
+        // empty
+    }
+
+    @Override
     public boolean localSearch(LocalSearchObjective<NSGAChromosome> objective) {
         // empty
         return false;
