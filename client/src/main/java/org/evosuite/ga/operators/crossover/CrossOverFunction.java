@@ -21,11 +21,13 @@ package org.evosuite.ga.operators.crossover;
 
 import org.evosuite.ga.Chromosome;
 import org.evosuite.ga.ConstructionFailedException;
+import org.evosuite.utils.LoggingUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.io.Serializable;
+import java.lang.UnsupportedOperationException;
 
 /**
  * Cross over two individuals
@@ -61,8 +63,7 @@ public abstract class CrossOverFunction<T extends Chromosome<T>> implements Seri
      */
     public void crossOver(T parent1, T parent2, T parent3)
             throws ConstructionFailedException {
-        logger.error(this.getClass().getSimpleName() + " does not implement usage of three parents!");
-        System.exit(-1);
+        throw new UnsupportedOperationException(this.getClass().getSimpleName() + " does not implement usage of three parents!");
     }
 
     /**
